@@ -1,0 +1,18 @@
+# Credenciais confidenciais (NUNCA enviar para o Git)
+.env
+
+# Banco de dados local (Criará um novo limpo no cPanel)
+*.db
+
+# Logs e arquivos de simulação local
+simulador/
+*.log
+
+# Arquivos temporários do Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.venv/
+venv/

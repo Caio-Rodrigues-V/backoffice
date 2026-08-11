@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DDM Backoffice - Painel de Negociações</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- CSS Estilo Premium -->
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        
+        <!-- Header -->
+        <header class="main-header">
+            <div class="logo-area">
+                <span class="logo-glow"></span>
+                <h1>DDM <span>Backoffice</span></h1>
+            </div>
+            
+            <div class="system-status">
+                <div class="status-indicator">
+                    <span class="pulse-dot"></span>
+                    <span class="status-text">Monitorando Caixa e Webhooks</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Painel de Estatísticas -->
+        <section class="stats-grid">
+            <div class="stat-card glass-card">
+                <div class="stat-icon icon-blue">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                </div>
+                <div class="stat-data">
+                    <span class="stat-label">Total de Lotes</span>
+                    <h3 id="stat-total-lotes">-</h3>
+                </div>
+            </div>
+            
+            <div class="stat-card glass-card">
+                <div class="stat-icon icon-purple">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
+                <div class="stat-data">
+                    <span class="stat-label">Total de Alunos</span>
+                    <h3 id="stat-total-alunos">-</h3>
+                </div>
+            </div>
+            
+            <div class="stat-card glass-card">
+                <div class="stat-icon icon-green">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+                </div>
+                <div class="stat-data">
+                    <span class="stat-label">Acordos Fechados</span>
+                    <h3 id="stat-total-acordos">-</h3>
+                </div>
+            </div>
+            
+            <div class="stat-card glass-card">
+                <div class="stat-icon icon-emerald">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+                </div>
+                <div class="stat-data">
+                    <span class="stat-label">Taxa de Conversão</span>
+                    <h3 id="stat-taxa-conversao">-</h3>
+                </div>
+            </div>
+        </section>
+
+        <!-- Filtros e Busca -->
+        <section class="filter-section glass-card">
+            <div class="search-box">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" id="search-input" placeholder="Buscar aluno por nome, CPF/RA ou assunto...">
+            </div>
+            
+            <div class="filter-options">
+                <select id="status-filter">
+                    <option value="todos">Todos os Status</option>
+                    <option value="pendente">Pendente</option>
+                    <option value="contatando">Abordagem Ativa</option>
+                    <option value="acordo_fechado">Acordo Fechado</option>
+                    <option value="sem_retorno">Sem Retorno</option>
+                    <option value="erro">Erro</option>
+                </select>
+            </div>
+        </section>
+
+        <!-- Tabela/Lista Principal de Lotes -->
+        <main class="main-content">
+            <div class="content-header">
+                <h2>Lotes de Solicitação</h2>
+                <button id="btn-refresh" class="btn btn-text">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                    Atualizar Dados
+                </button>
+            </div>
+            
+            <div class="lotes-container" id="lotes-list">
+                <!-- Lotes serão inseridos aqui dinamicamente pelo JS -->
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                    <p>Carregando lotes de negociações...</p>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Notificações Toast -->
+        <div id="toast-container" class="toast-container"></div>
+        
+    </div>
+
+    <!-- Scripts JS -->
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>

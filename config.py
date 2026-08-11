@@ -10,7 +10,7 @@ def carregar_env():
                 if linha and not linha.startswith("#") and "=" in linha:
                     partes = linha.split("=", 1)
                     chave = partes[0].strip()
-                    valor = partes[1].strip()
+                    valor = partes[1].strip().strip("'\"")
                     os.environ[chave] = valor
 
 # Carrega as configurações
@@ -19,7 +19,7 @@ carregar_env()
 # Credenciais reais carregadas do .env
 EMAIL_USER = os.getenv("EMAIL_USER", "")
 # Remove qualquer espaço em branco na senha de app
-EMAIL_PASS = os.getenv("EMAIL_PASS", "").replace(" ", "")
+EMAIL_PASS = os.getenv("EMAIL_PASS", "").replace(" ", "").strip("'\"")
 EMAIL_IMAP_SERVER = os.getenv("EMAIL_IMAP_SERVER", "imap.gmail.com")
 EMAIL_SMTP_SERVER = os.getenv("EMAIL_SMTP_SERVER", "smtp.gmail.com")
 
@@ -40,8 +40,8 @@ ASSUNTO_PALAVRAS_CHAVE = [
     "inaptos"
 ]
 
-# Configurações do Banco de Dados
-DB_NAME = "backoffice_agent.db"
+# Configurações do Banco de Dados (Caminho Absoluto)
+DB_NAME = os.path.join(os.path.dirname(__file__), "backoffice_agent.db")
 
 # Integração com GoGenier (Robô de Abordagem)
 SIMULAR_GOGENIER = True  # Mude para False para enviar requisições HTTP reais para a GoGenier

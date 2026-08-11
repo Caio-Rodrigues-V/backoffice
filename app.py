@@ -4,11 +4,20 @@ import db_manager
 import orchestrator
 import whatsapp_connector
 import config
+import sys
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
 
 # Garantindo que as tabelas estejam inicializadas
 db_manager.init_db()
+
+@app.route('/api/debug/python-path', methods=['GET'])
+def debug_python_path():
+    """Retorna o caminho exato do executável do Python rodando no servidor."""
+    return jsonify({
+        "python_executable": sys.executable,
+        "cwd": os.getcwd()
+    })
 
 @app.route('/')
 def index():

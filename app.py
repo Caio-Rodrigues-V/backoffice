@@ -19,6 +19,39 @@ def debug_python_path():
         "cwd": os.getcwd()
     })
 
+@app.route('/api/debug/test-smtp', methods=['GET'])
+def debug_test_smtp():
+    """Testa a conexão e credenciais do SMTP e retorna o resultado ou erro detalhado."""
+    try:
+        import smtplib
+        from email.mime.text import MIMEText
+        import traceback
+        
+        if not config.EMAIL_USER or not config.EMAIL_PASS:
+            return jsonify({"success": False, "message": "EMAIL_USER ou EMAIL_PASS não estão configurados no .env."}), 400
+            
+        msg = MIMEText("E-mail de diagnóstico de envio SMTP.")
+        msg["From"] = config.EMAIL_USER
+        msg["To"] = config.EMAIL_USER  # Envia para si mesmo
+        msg["Subject"] = "Diagnóstico SMTP - Agente DDM"
+        
+        print("[Debug SMTP] Iniciando conexão com o SMTP...")
+        server = smtplib.SMTP_SSL(config.EMAIL_SMTP_SERVER, 465, timeout=10)
+        print("[Debug SMTP] Fazendo login...")
+        server.login(config.EMAIL_USER, config.EMAIL_PASS)
+        print("[Debug SMTP] Enviando e-mail...")
+        server.sendmail(config.EMAIL_USER, [config.EMAIL_USER], msg.as_string())
+        server.quit()
+        
+        return jsonify({"success": True, "message": "SMTP conectado e e-mail de teste enviado com sucesso!"})
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error_type": type(e).__name__,
+            "error_message": str(e),
+            "traceback": traceback.format_exc()
+        }), 500
+
 @app.route('/')
 def index():
     """Serva a página principal do Dashboard."""

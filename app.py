@@ -48,6 +48,30 @@ def find_all_node():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/debug/read-other-htaccess', methods=['GET'])
+def read_other_htaccess():
+    """Lê os arquivos .htaccess de outros apps na pasta apps/ para verificar a configuração funcional do Passenger."""
+    try:
+        import os
+        results = {}
+        base_apps = "/home/grpia/apps"
+        if os.path.exists(base_apps):
+            for item in os.listdir(base_apps):
+                item_path = os.path.join(base_apps, item)
+                if os.path.isdir(item_path):
+                    htaccess_path = os.path.join(item_path, ".htaccess")
+                    if os.path.exists(htaccess_path):
+                        try:
+                            with open(htaccess_path, 'r') as f:
+                                results[item] = f.read()
+                        except Exception as e:
+                            results[item] = f"Erro ao ler: {str(e)}"
+                    else:
+                        results[item] = "Não possui .htaccess"
+        return jsonify(results)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/debug/test-smtp', methods=['GET'])
 def debug_test_smtp():
     """Testa a conexão e credenciais do SMTP e retorna o resultado ou erro detalhado."""

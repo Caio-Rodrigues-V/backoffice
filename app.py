@@ -52,6 +52,59 @@ def debug_test_smtp():
             "traceback": traceback.format_exc()
         }), 500
 
+@app.route('/api/debug/run-build', methods=['GET'])
+def debug_run_build():
+    """Executa o build do Next.js do CRM ativando o ambiente virtual do Node do cPanel."""
+    try:
+        import subprocess
+        import os
+        import traceback
+        
+        # Localiza dinamicamente a pasta da versão do Node na pasta do nodevenv do omnichannel
+        base_nodevenv = "/home/grpia/nodevenv/apps/omnichannel"
+        if not os.path.exists(base_nodevenv):
+            return jsonify({
+                "success": False, 
+                "message": f"Diretório do ambiente virtual do Node não encontrado: {base_nodevenv}. Certifique-se de que o aplicativo OMNI-CRM está criado no cPanel."
+            }), 400
+            
+        versions = [d for d in os.listdir(base_nodevenv) if os.path.isdir(os.path.join(base_nodevenv, d)) and d.isdigit()]
+        if not versions:
+            return jsonify({
+                "success": False,
+                "message": f"Nenhuma versão do Node encontrada em {base_nodevenv}."
+            }), 400
+            
+        node_version = versions[0]
+        activate_path = f"{base_nodevenv}/{node_version}/bin/activate"
+        
+        print(f"[Debug Build] Iniciando build com Node v{node_version} em apps/omnichannel...")
+        
+        # Comando para ativar o virtualenv do Node e executar o npm run build
+        cmd = f"source {activate_path} && cd /home/grpia/apps/omnichannel && npm run build"
+        
+        result = subprocess.run(
+            cmd,
+            shell=True,
+            executable='/bin/bash',  # Necessário bash para suportar o comando 'source'
+            capture_output=True,
+            text=True,
+            timeout=300  # Limite de 5 minutos para o build
+        )
+        
+        return jsonify({
+            "success": result.returncode == 0,
+            "returncode": result.returncode,
+            "stdout": result.stdout,
+            "stderr": result.stderr
+        })
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }), 500
+
 @app.route('/')
 def index():
     """Serva a página principal do Dashboard."""

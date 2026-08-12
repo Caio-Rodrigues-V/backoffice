@@ -141,15 +141,22 @@ def debug_run_build():
             
         # 4. Monta o comando de execução para depurar as dependências do React
         if activate_path:
-            print("[Debug Build] Rodando 'npm ls react' usando virtualenv...")
-            cmd = f"source {activate_path} && cd /home/grpia/apps/omnichannel && npm ls react"
+            print("[Debug Build] Rodando 'npm run build' com NODE_ENV=production usando virtualenv...")
+            cmd = f"export NODE_ENV=production && source {activate_path} && cd /home/grpia/apps/omnichannel && npm run build"
         elif node_executable:
-            print(f"[Debug Build] Rodando 'npm ls react' usando o Node: {node_executable}...")
+            print(f"[Debug Build] Rodando 'npm run build' com NODE_ENV=production usando o Node: {node_executable}...")
             node_dir = os.path.dirname(node_executable)
-            cmd = f"export PATH={node_dir}:$PATH && cd /home/grpia/apps/omnichannel && npm ls react"
+            cmd = f"export NODE_ENV=production && export PATH={node_dir}:$PATH && cd /home/grpia/apps/omnichannel && npm run build"
         else:
-            print("[Debug Build] Rodando 'npm ls react' com Node global...")
-            cmd = "cd /home/grpia/apps/omnichannel && npm ls react"
+            print("[Debug Build] Rodando 'npm run build' com NVM...")
+            cmd = (
+                "export NODE_ENV=production && "
+                "export NVM_DIR=/home/grpia/.nvm && "
+                "source $NVM_DIR/nvm.sh && "
+                "nvm use 20.19.0 && "
+                "cd /home/grpia/apps/omnichannel && "
+                "npm run build"
+            )
         
         result = subprocess.run(
             cmd,
@@ -157,7 +164,7 @@ def debug_run_build():
             executable='/bin/bash',
             capture_output=True,
             text=True,
-            timeout=120
+            timeout=300  # Aumenta para 5 minutos para o build completo
         )
         
         return jsonify({

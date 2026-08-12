@@ -139,48 +139,32 @@ def debug_run_build():
                 "conteudo_raiz_home": scan_results
             }), 400
             
-        # 4. Monta o comando de execução baseado no que foi encontrado
+        # 4. Monta o comando de execução para depurar as dependências do React
         if activate_path:
-            print(f"[Debug Build] Iniciando build usando o virtualenv: {activate_path}...")
-            cmd = f"source {activate_path} && cd /home/grpia/apps/omnichannel && npm run build"
+            print("[Debug Build] Rodando 'npm ls react' usando virtualenv...")
+            cmd = f"source {activate_path} && cd /home/grpia/apps/omnichannel && npm ls react"
         elif node_executable:
-            print(f"[Debug Build] Iniciando build usando o executável do sistema: {node_executable}...")
+            print(f"[Debug Build] Rodando 'npm ls react' usando o Node: {node_executable}...")
             node_dir = os.path.dirname(node_executable)
-            cmd = f"export PATH={node_dir}:$PATH && cd /home/grpia/apps/omnichannel && npm run build"
+            cmd = f"export PATH={node_dir}:$PATH && cd /home/grpia/apps/omnichannel && npm ls react"
         else:
-            print("[Debug Build] Usando NVM como fallback...")
-            cmd = (
-                "export NVM_DIR=/home/grpia/.nvm && "
-                "source $NVM_DIR/nvm.sh && "
-                "nvm use 20.19.0 && "
-                "cd /home/grpia/apps/omnichannel && "
-                "npm run build"
-            )
+            print("[Debug Build] Rodando 'npm ls react' com Node global...")
+            cmd = "cd /home/grpia/apps/omnichannel && npm ls react"
         
         result = subprocess.run(
             cmd,
             shell=True,
-            executable='/bin/bash',  # Necessário bash para suportar o comando 'source'
+            executable='/bin/bash',
             capture_output=True,
             text=True,
-            timeout=300  # Limite de 5 minutos para o build
+            timeout=120
         )
-        
-        # Se falhar, faz uma varredura para nos ajudar a encontrar o Node 20
-        home_contents = []
-        if result.returncode != 0:
-            try:
-                home_contents = os.listdir("/home/grpia")
-            except Exception as e:
-                home_contents = [f"Erro ao listar home: {str(e)}"]
         
         return jsonify({
             "success": result.returncode == 0,
             "returncode": result.returncode,
             "stdout": result.stdout,
-            "stderr": result.stderr,
-            "path_usado": activate_path or node_executable or "nvm",
-            "pastas_no_home_do_usuario": home_contents
+            "stderr": result.stderr
         })
     except Exception as e:
         return jsonify({

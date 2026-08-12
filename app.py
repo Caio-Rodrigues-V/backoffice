@@ -108,6 +108,18 @@ def read_crm_htaccess():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/debug/list-crm-files', methods=['GET'])
+def list_crm_files():
+    """Lista todos os arquivos na raiz do CRM novo para verificar o ponto de entrada."""
+    try:
+        import os
+        path = "/home/grpia/apps/omnichannel"
+        if os.path.exists(path):
+            return jsonify(os.listdir(path))
+        return jsonify({"message": f"Pasta não encontrada: {path}"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/debug/test-smtp', methods=['GET'])
 def debug_test_smtp():
     """Testa a conexão e credenciais do SMTP e retorna o resultado ou erro detalhado."""

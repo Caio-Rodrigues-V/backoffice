@@ -63,9 +63,22 @@ def debug_run_build():
         # Localiza dinamicamente a pasta da versão do Node na pasta do nodevenv do omnichannel
         base_nodevenv = "/home/grpia/nodevenv/apps/omnichannel"
         if not os.path.exists(base_nodevenv):
+            # Se não encontrar, lista o que tem dentro de /home/grpia/nodevenv para diagnóstico
+            venv_contents = []
+            root_nodevenv = "/home/grpia/nodevenv"
+            if os.path.exists(root_nodevenv):
+                try:
+                    for root, dirs, files in os.walk(root_nodevenv):
+                        # Limita a profundidade para não travar
+                        depth = root.replace(root_nodevenv, '').count(os.sep)
+                        if depth < 3:
+                            venv_contents.append(root)
+                except Exception as walk_err:
+                    venv_contents.append(f"Erro ao listar: {str(walk_err)}")
             return jsonify({
                 "success": False, 
-                "message": f"Diretório do ambiente virtual do Node não encontrado: {base_nodevenv}. Certifique-se de que o aplicativo OMNI-CRM está criado no cPanel."
+                "message": f"Diretório do ambiente virtual do Node não encontrado: {base_nodevenv}.",
+                "pastas_existentes_em_nodevenv": venv_contents
             }), 400
             
         versions = [d for d in os.listdir(base_nodevenv) if os.path.isdir(os.path.join(base_nodevenv, d)) and d.isdigit()]

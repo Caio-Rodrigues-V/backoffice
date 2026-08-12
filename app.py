@@ -94,28 +94,19 @@ def debug_run_build():
                     node_executable = potential_node
                     break
                     
-        # 3. Se ainda não achou, varre o diretório /opt/alt por qualquer pasta de nodejs
+        # 3. Se ainda não achou, lista a raiz /home/grpia para diagnóstico
         scan_results = []
         if not activate_path and not node_executable:
             try:
-                for root, dirs, files in os.walk("/opt/alt"):
-                    depth = root.replace("/opt/alt", "").count(os.sep)
-                    if depth > 3:
-                        dirs.clear()
-                        continue
-                    if "alt-nodejs" in root and "node" in files:
-                        node_path = os.path.join(root, "node")
-                        if os.path.exists(node_path):
-                            node_executable = node_path
-                            break
+                scan_results = os.listdir("/home/grpia")
             except Exception as e:
-                scan_results.append(f"Erro ao varrer /opt/alt: {str(e)}")
+                scan_results.append(f"Erro ao listar raiz: {str(e)}")
                 
         if not activate_path and not node_executable:
             return jsonify({
                 "success": False, 
-                "message": "Não foi possível encontrar nenhum executável do Node 18/20/22 no sistema.",
-                "logs_varredura": scan_results
+                "message": "Não foi possível encontrar o Node ou NVM no servidor.",
+                "conteudo_raiz_home": scan_results
             }), 400
             
         # 4. Monta o comando de execução usando o NVM local do usuário

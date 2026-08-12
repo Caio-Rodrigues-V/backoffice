@@ -118,15 +118,15 @@ def debug_run_build():
                 "logs_varredura": scan_results
             }), 400
             
-        # 4. Monta o comando de execução
-        if activate_path:
-            print(f"[Debug Build] Iniciando build usando o virtualenv: {activate_path}...")
-            cmd = f"source {activate_path} && cd /home/grpia/apps/omnichannel && npm run build"
-        else:
-            print(f"[Debug Build] Iniciando build usando o executável global: {node_executable}...")
-            # Adiciona o diretório do node ao PATH para o npm encontrar o node correto
-            node_dir = os.path.dirname(node_executable)
-            cmd = f"export PATH={node_dir}:$PATH && cd /home/grpia/apps/omnichannel && npm run build"
+        # 4. Monta o comando de execução usando o NVM local do usuário
+        print("[Debug Build] Iniciando build carregando o NVM local para usar o Node 20.19.0...")
+        cmd = (
+            "export NVM_DIR=/home/grpia/.nvm && "
+            "source $NVM_DIR/nvm.sh && "
+            "nvm use 20.19.0 && "
+            "cd /home/grpia/apps/omnichannel && "
+            "npm run build"
+        )
         
         result = subprocess.run(
             cmd,

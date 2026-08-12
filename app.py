@@ -72,6 +72,29 @@ def read_other_htaccess():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/debug/find-htaccess', methods=['GET'])
+def find_htaccess():
+    """Varre a conta do usuário /home/grpia/ para localizar todos os arquivos .htaccess."""
+    try:
+        import os
+        results = []
+        root_home = "/home/grpia"
+        # Varre até profundidade 3 para evitar varrer pastas gigantescas como node_modules
+        for root, dirs, files in os.walk(root_home):
+            # Ignora pastas de controle e node_modules/trash para ir rápido
+            if any(p in root for p in ["node_modules", ".git", ".trash", "repositories"]):
+                dirs.clear()
+                continue
+            depth = root.replace(root_home, '').count(os.sep)
+            if depth > 3:
+                dirs.clear()
+                continue
+            if '.htaccess' in files:
+                results.append(os.path.join(root, '.htaccess'))
+        return jsonify(results)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/debug/test-smtp', methods=['GET'])
 def debug_test_smtp():
     """Testa a conexão e credenciais do SMTP e retorna o resultado ou erro detalhado."""

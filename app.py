@@ -67,7 +67,7 @@ def debug_run_build():
         node_executable = None
         activate_path = None
         
-        # Caminhos prováveis do node/activate
+        # 1. Tenta os caminhos padrão do usuário
         probable_paths = [
             "/home/grpia/nodevenv/apps/omnichannel/20/bin/activate",
             "/home/grpia/nodevenv/apps/omnichannel/18/bin/activate",
@@ -79,38 +79,54 @@ def debug_run_build():
                 activate_path = path
                 break
                 
-        # Se não achou nos prováveis, faz varredura no home por pastas 'nodevenv'
-        scan_results = []
+        # 2. Se não achou, procura por versões do Node 20/22 instaladas globalmente pelo CloudLinux/cPanel no sistema (/opt/alt ou /opt/cpanel)
         if not activate_path:
-            root_home = "/home/grpia"
+            system_node_paths = [
+                "/opt/alt/alt-nodejs20/root/usr/bin",
+                "/opt/alt/alt-nodejs22/root/usr/bin",
+                "/opt/alt/alt-nodejs18/root/usr/bin",
+                "/usr/bin",
+                "/usr/local/bin"
+            ]
+            for path in system_node_paths:
+                potential_node = os.path.join(path, "node")
+                if os.path.exists(potential_node):
+                    node_executable = potential_node
+                    break
+                    
+        # 3. Se ainda não achou, varre o diretório /opt/alt por qualquer pasta de nodejs
+        scan_results = []
+        if not activate_path and not node_executable:
             try:
-                # Busca rápida de pastas que contenham 'nodevenv' ou 'bin/node' nos primeiros 4 níveis
-                for root, dirs, files in os.walk(root_home):
-                    depth = root.replace(root_home, '').count(os.sep)
-                    if depth > 4:
-                        dirs.clear() # não entra mais profundo
+                for root, dirs, files in os.walk("/opt/alt"):
+                    depth = root.replace("/opt/alt", "").count(os.sep)
+                    if depth > 3:
+                        dirs.clear()
                         continue
-                    if 'nodevenv' in root or 'node' in dirs:
-                        scan_results.append(root)
-                        # Se achar um activate ou bin/node, guarda
-                        potential_activate = os.path.join(root, 'bin', 'activate')
-                        if os.path.exists(potential_activate):
-                            activate_path = potential_activate
+                    if "alt-nodejs" in root and "node" in files:
+                        node_path = os.path.join(root, "node")
+                        if os.path.exists(node_path):
+                            node_executable = node_path
                             break
             except Exception as e:
-                scan_results.append(f"Erro no scan: {str(e)}")
+                scan_results.append(f"Erro ao varrer /opt/alt: {str(e)}")
                 
-        if not activate_path:
+        if not activate_path and not node_executable:
             return jsonify({
                 "success": False, 
-                "message": "Não foi possível encontrar o ambiente virtual do Node na VPS.",
-                "pastas_encontradas_no_scan": scan_results
+                "message": "Não foi possível encontrar nenhum executável do Node 18/20/22 no sistema.",
+                "logs_varredura": scan_results
             }), 400
             
-        print(f"[Debug Build] Iniciando build usando o virtualenv: {activate_path}...")
-        
-        # Comando para ativar o virtualenv do Node e executar o npm run build
-        cmd = f"source {activate_path} && cd /home/grpia/apps/omnichannel && npm run build"
+        # 4. Monta o comando de execução
+        if activate_path:
+            print(f"[Debug Build] Iniciando build usando o virtualenv: {activate_path}...")
+            cmd = f"source {activate_path} && cd /home/grpia/apps/omnichannel && npm run build"
+        else:
+            print(f"[Debug Build] Iniciando build usando o executável global: {node_executable}...")
+            # Adiciona o diretório do node ao PATH para o npm encontrar o node correto
+            node_dir = os.path.dirname(node_executable)
+            cmd = f"export PATH={node_dir}:$PATH && cd /home/grpia/apps/omnichannel && npm run build"
         
         result = subprocess.run(
             cmd,

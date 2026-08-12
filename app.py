@@ -120,6 +120,19 @@ def list_crm_files():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/debug/read-server-js', methods=['GET'])
+def read_server_js():
+    """Lê o arquivo server.js da raiz do CRM para validar o ponto de entrada."""
+    try:
+        import os
+        path = "/home/grpia/apps/omnichannel/server.js"
+        if os.path.exists(path):
+            with open(path, 'r') as f:
+                return jsonify({"content": f.read()})
+        return jsonify({"message": "server.js não encontrado"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/debug/test-smtp', methods=['GET'])
 def debug_test_smtp():
     """Testa a conexão e credenciais do SMTP e retorna o resultado ou erro detalhado."""

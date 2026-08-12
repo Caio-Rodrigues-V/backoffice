@@ -19,6 +19,35 @@ def debug_python_path():
         "cwd": os.getcwd()
     })
 
+@app.route('/api/debug/find-all-node', methods=['GET'])
+def find_all_node():
+    """Varre os diretórios de sistema da VPS para localizar todas as versões do Node instaladas."""
+    try:
+        import os
+        results = []
+        # Busca executáveis 'node' em locais de sistema do cPanel
+        search_paths = ["/opt", "/usr/local"]
+        for path in search_paths:
+            if os.path.exists(path):
+                try:
+                    for root, dirs, files in os.walk(path):
+                        # Limita a profundidade para não dar timeout
+                        depth = root.replace(path, '').count(os.sep)
+                        if depth > 4:
+                            dirs.clear()
+                            continue
+                        if 'node' in files:
+                            node_path = os.path.join(root, 'node')
+                            if os.access(node_path, os.X_OK):
+                                results.append(node_path)
+                except Exception as walk_err:
+                    results.append(f"Erro em {path}: {str(walk_err)}")
+        return jsonify({
+            "node_binaries_found": results
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/debug/test-smtp', methods=['GET'])
 def debug_test_smtp():
     """Testa a conexão e credenciais do SMTP e retorna o resultado ou erro detalhado."""

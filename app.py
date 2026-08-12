@@ -62,36 +62,52 @@ def debug_run_build():
         
         # Localiza dinamicamente a pasta da versão do Node na pasta do nodevenv do omnichannel
         base_nodevenv = "/home/grpia/nodevenv/apps/omnichannel"
-        if not os.path.exists(base_nodevenv):
-            # Se não encontrar, lista o que tem dentro de /home/grpia/nodevenv para diagnóstico
-            venv_contents = []
-            root_nodevenv = "/home/grpia/nodevenv"
-            if os.path.exists(root_nodevenv):
-                try:
-                    for root, dirs, files in os.walk(root_nodevenv):
-                        # Limita a profundidade para não travar
-                        depth = root.replace(root_nodevenv, '').count(os.sep)
-                        if depth < 3:
-                            venv_contents.append(root)
-                except Exception as walk_err:
-                    venv_contents.append(f"Erro ao listar: {str(walk_err)}")
+        
+        # Vamos fazer uma busca ampla caso o caminho padrão não exista
+        node_executable = None
+        activate_path = None
+        
+        # Caminhos prováveis do node/activate
+        probable_paths = [
+            "/home/grpia/nodevenv/apps/omnichannel/20/bin/activate",
+            "/home/grpia/nodevenv/apps/omnichannel/18/bin/activate",
+            "/home/grpia/nodevenv/apps/omnichannel/22/bin/activate",
+        ]
+        
+        for path in probable_paths:
+            if os.path.exists(path):
+                activate_path = path
+                break
+                
+        # Se não achou nos prováveis, faz varredura no home por pastas 'nodevenv'
+        scan_results = []
+        if not activate_path:
+            root_home = "/home/grpia"
+            try:
+                # Busca rápida de pastas que contenham 'nodevenv' ou 'bin/node' nos primeiros 4 níveis
+                for root, dirs, files in os.walk(root_home):
+                    depth = root.replace(root_home, '').count(os.sep)
+                    if depth > 4:
+                        dirs.clear() # não entra mais profundo
+                        continue
+                    if 'nodevenv' in root or 'node' in dirs:
+                        scan_results.append(root)
+                        # Se achar um activate ou bin/node, guarda
+                        potential_activate = os.path.join(root, 'bin', 'activate')
+                        if os.path.exists(potential_activate):
+                            activate_path = potential_activate
+                            break
+            except Exception as e:
+                scan_results.append(f"Erro no scan: {str(e)}")
+                
+        if not activate_path:
             return jsonify({
                 "success": False, 
-                "message": f"Diretório do ambiente virtual do Node não encontrado: {base_nodevenv}.",
-                "pastas_existentes_em_nodevenv": venv_contents
+                "message": "Não foi possível encontrar o ambiente virtual do Node na VPS.",
+                "pastas_encontradas_no_scan": scan_results
             }), 400
             
-        versions = [d for d in os.listdir(base_nodevenv) if os.path.isdir(os.path.join(base_nodevenv, d)) and d.isdigit()]
-        if not versions:
-            return jsonify({
-                "success": False,
-                "message": f"Nenhuma versão do Node encontrada em {base_nodevenv}."
-            }), 400
-            
-        node_version = versions[0]
-        activate_path = f"{base_nodevenv}/{node_version}/bin/activate"
-        
-        print(f"[Debug Build] Iniciando build com Node v{node_version} em apps/omnichannel...")
+        print(f"[Debug Build] Iniciando build usando o virtualenv: {activate_path}...")
         
         # Comando para ativar o virtualenv do Node e executar o npm run build
         cmd = f"source {activate_path} && cd /home/grpia/apps/omnichannel && npm run build"

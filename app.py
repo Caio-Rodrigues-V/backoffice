@@ -108,9 +108,10 @@ def debug_run_build():
                 activate_path = path
                 break
                 
-        # 2. Se não achou, procura por versões do Node 20/22 instaladas globalmente pelo CloudLinux/cPanel no sistema (/opt/alt ou /opt/cpanel)
+        # 2. Se não achou, procura por versões do Node 20/22/18 instaladas no sistema
         if not activate_path:
             system_node_paths = [
+                "/opt/cpanel/ea-nodejs22/bin",
                 "/opt/alt/alt-nodejs20/root/usr/bin",
                 "/opt/alt/alt-nodejs22/root/usr/bin",
                 "/opt/alt/alt-nodejs18/root/usr/bin",

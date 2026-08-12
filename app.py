@@ -95,6 +95,19 @@ def find_htaccess():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/debug/read-crm-htaccess', methods=['GET'])
+def read_crm_htaccess():
+    """Lê o arquivo .htaccess do CRM antigo para ver as regras exatas do Passenger."""
+    try:
+        import os
+        path = "/home/grpia/crm.grupoddm.ia.br/.htaccess"
+        if os.path.exists(path):
+            with open(path, 'r') as f:
+                return jsonify({"content": f.read()})
+        return jsonify({"message": f"Arquivo não encontrado: {path}"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/debug/test-smtp', methods=['GET'])
 def debug_test_smtp():
     """Testa a conexão e credenciais do SMTP e retorna o resultado ou erro detalhado."""

@@ -133,6 +133,53 @@ def read_server_js():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/debug/write-crm-boot', methods=['GET'])
+def write_crm_boot():
+    """Grava o código real do servidor de produção do Next.js em server.js e app.js."""
+    try:
+        import os
+        crm_path = "/home/grpia/apps/omnichannel"
+        if not os.path.exists(crm_path):
+            return jsonify({"message": f"Pasta do CRM não encontrada: {crm_path}"}), 404
+            
+        boot_code = """const { createServer } = require('http');
+const { parse } = require('url');
+const next = require('next');
+
+const dev = false;
+const app = next({ dev });
+const handle = app.getRequestHandler();
+
+app.prepare().then(() => {
+  createServer((req, res) => {
+    const parsedUrl = parse(req.url, true);
+    handle(req, res, parsedUrl);
+  }).listen(process.env.PORT || 3000, (err) => {
+    if (err) throw err;
+    console.log('> Ready on http://localhost:' + (process.env.PORT || 3000));
+  });
+});
+"""
+        # Escreve nos dois nomes possíveis para garantir que o cPanel ache
+        paths_to_write = [
+            os.path.join(crm_path, "server.js"),
+            os.path.join(crm_path, "app.js")
+        ]
+        
+        written = []
+        for path in paths_to_write:
+            with open(path, "w") as f:
+                f.write(boot_code)
+            written.append(path)
+            
+        return jsonify({
+            "success": True,
+            "message": "Arquivos de inicialização de produção do Next.js gravados com sucesso!",
+            "files_written": written
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/debug/test-smtp', methods=['GET'])
 def debug_test_smtp():
     """Testa a conexão e credenciais do SMTP e retorna o resultado ou erro detalhado."""

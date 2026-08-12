@@ -136,11 +136,21 @@ def debug_run_build():
             timeout=300  # Limite de 5 minutos para o build
         )
         
+        # Se falhar, faz uma varredura para nos ajudar a encontrar o Node 20
+        home_contents = []
+        if result.returncode != 0:
+            try:
+                home_contents = os.listdir("/home/grpia")
+            except Exception as e:
+                home_contents = [f"Erro ao listar home: {str(e)}"]
+        
         return jsonify({
             "success": result.returncode == 0,
             "returncode": result.returncode,
             "stdout": result.stdout,
-            "stderr": result.stderr
+            "stderr": result.stderr,
+            "path_usado": activate_path or node_executable or "nvm",
+            "pastas_no_home_do_usuario": home_contents
         })
     except Exception as e:
         return jsonify({

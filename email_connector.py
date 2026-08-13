@@ -105,17 +105,10 @@ def buscar_novos_emails():
         mail.login(config.EMAIL_USER, config.EMAIL_PASS)
         mail.select("inbox")
         
-        # Busca mensagens não lidas
-        if "gmail.com" in config.EMAIL_IMAP_SERVER.lower():
-            # Busca avançada do Gmail para filtrar diretamente no servidor pelas palavras-chave no assunto (ASCII-safe e sem acentos)
-            query = 'is:unread (subject:negociacao OR subject:cobranca OR subject:inaptos)'
-            print(f"[Email Monitor] Buscando no Gmail com query: {query}")
-            status, messages = mail.search(None, 'X-GM-RAW', f'"{query}"')
-        else:
-            status, messages = mail.search(None, "UNSEEN")
-            
+        # Busca todas as mensagens não lidas
+        status, messages = mail.search(None, "UNSEEN")
         if status != "OK" or not messages[0]:
-            print("[Email Monitor] Nenhuma nova mensagem relevante não lida encontrada.")
+            print("[Email Monitor] Nenhuma nova mensagem não lida encontrada.")
             mail.close()
             mail.logout()
             return emails_encontrados
@@ -123,41 +116,43 @@ def buscar_novos_emails():
         # Pega a lista completa de IDs (ordem crescente: mais antigos primeiro)
         todas_mensagens = messages[0].split()
         
-        # Como o filtro de assunto já foi feito no servidor para Gmail,
-        # podemos analisar todas as mensagens encontradas (ou limitar a 50 se for fallback)
-        if "gmail.com" in config.EMAIL_IMAP_SERVER.lower():
-            msg_ids = todas_mensagens
-        else:
-            msg_ids = todas_mensagens[-50:]
-            
-        print(f"[Email Monitor] Analisando {len(msg_ids)} mensagens não lidas relevantes...")
+        # Filtramos para ler apenas os cabeçalhos das 50 mensagens não lidas mais recentes (fim da lista)
+        msg_ids = todas_mensagens[-50:]
+        print(f"[Email Monitor] Analisando cabeçalhos das {len(msg_ids)} mensagens não lidas mais recentes...")
         
         for num in msg_ids:
-            # Obtém a mensagem inteira
+            # 1. Obtém apenas o cabeçalho sem marcar o e-mail como lido (PEEK)
+            status, data = mail.fetch(num, "(BODY.PEEK[HEADER.FIELDS (SUBJECT FROM MESSAGE-ID)])")
+            if status != "OK" or not data or not data[0]:
+                continue
+                
+            raw_header = data[0][1]
+            msg_header = email.message_from_bytes(raw_header)
+            
+            # Extrai e decodifica assunto, remetente e Message-ID
+            subject = decodificar_header(msg_header["Subject"])
+            sender_full = decodificar_header(msg_header["From"])
+            _, sender_email = parseaddr(sender_full)
+            message_id = msg_header["Message-ID"] or f"sem-id-{datetime.now().timestamp()}"
+            
+            # --- Aplicação rápida das regras de filtragem ---
+            if not verificar_remetente_autorizado(sender_email):
+                # Silenciosamente ignora remetentes não autorizados para manter o log limpo
+                continue
+                
+            if not verificar_assunto_relevante(subject):
+                # Silenciosamente ignora assuntos não relevantes
+                continue
+                
+            # Se passou nos filtros, agora marcamos o e-mail como lido e baixamos o corpo completo
+            print(f"[Email Monitor] Encontrado e-mail relevante! Processando: '{subject}' de <{sender_email}>")
             status, data = mail.fetch(num, "(RFC822)")
-            if status != "OK":
+            if status != "OK" or not data or not data[0]:
                 continue
                 
             raw_email = data[0][1]
             msg = email.message_from_bytes(raw_email)
             
-            # Extrai e decodifica assunto, remetente e Message-ID
-            subject = decodificar_header(msg["Subject"])
-            sender_full = decodificar_header(msg["From"])
-            _, sender_email = parseaddr(sender_full)
-            message_id = msg["Message-ID"] or f"sem-id-{datetime.now().timestamp()}"
-            
-            print(f"[Email Monitor] Analisando e-mail: '{subject}' de <{sender_email}>")
-            
-            # --- Aplicação das regras de filtragem ---
-            if not verificar_remetente_autorizado(sender_email):
-                print(f"[Email Monitor] Ignorado: Remetente {sender_email} não autorizado.")
-                continue
-                
-            if not verificar_assunto_relevante(subject):
-                print(f"[Email Monitor] Ignorado: Assunto '{subject}' não relevante.")
-                continue
-                
             # Extrai corpo e anexos
             body_text, body_html, anexo_excel = obter_dados_corpo_e_anexo(msg)
             

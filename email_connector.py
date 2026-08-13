@@ -199,6 +199,24 @@ def buscar_novos_emails():
         
     return emails_encontrados
 
+def conectar_smtp():
+    """Tenta conectar ao SMTP usando SSL (465) e, se falhar, tenta TLS (587)."""
+    try:
+        # Tenta primeira opção: SSL na porta 465
+        print(f"[SMTP] Tentando conexao via SSL (Porta 465) no servidor {config.EMAIL_SMTP_SERVER}...")
+        server = smtplib.SMTP_SSL(config.EMAIL_SMTP_SERVER, 465, timeout=10)
+        return server
+    except Exception as e_ssl:
+        print(f"[SMTP] Falha na porta 465: {e_ssl}. Tentando TLS (Porta 587)...")
+        try:
+            # Tenta segunda opção: TLS na porta 587
+            server = smtplib.SMTP(config.EMAIL_SMTP_SERVER, 587, timeout=10)
+            server.starttls()
+            return server
+        except Exception as e_tls:
+            print(f"[SMTP] Falha na porta 587: {e_tls}")
+            raise ConnectionError(f"Nao foi possivel conectar ao servidor SMTP nas portas 465 e 587: {e_ssl} / {e_tls}")
+
 def enviar_resposta_recebimento(lote_id, destinatario, assunto_original, alunos_nomes, message_id=None):
     """
     Envia o e-mail de resposta inicial (Confirmação de recebimento) respondendo na mesma conversa (Thread).
@@ -231,8 +249,8 @@ def enviar_resposta_recebimento(lote_id, destinatario, assunto_original, alunos_
         
         msg.attach(MIMEText(corpo, "plain", "utf-8"))
         
-        # Conecta no servidor SMTP do Gmail (Porta SSL 465)
-        server = smtplib.SMTP_SSL(config.EMAIL_SMTP_SERVER, 465)
+        # Conecta no SMTP
+        server = conectar_smtp()
         server.login(config.EMAIL_USER, config.EMAIL_PASS)
         server.sendmail(config.EMAIL_USER, [destinatario], msg.as_string())
         server.quit()
@@ -293,7 +311,7 @@ def enviar_resposta_resultado_final(lote_id, destinatario, assunto_original, rel
         msg.attach(MIMEText(corpo, "plain", "utf-8"))
         
         # Conecta no SMTP
-        server = smtplib.SMTP_SSL(config.EMAIL_SMTP_SERVER, 465)
+        server = conectar_smtp()
         server.login(config.EMAIL_USER, config.EMAIL_PASS)
         server.sendmail(config.EMAIL_USER, [destinatario], msg.as_string())
         server.quit()

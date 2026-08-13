@@ -105,10 +105,17 @@ def buscar_novos_emails():
         mail.login(config.EMAIL_USER, config.EMAIL_PASS)
         mail.select("inbox")
         
-        # Busca todas as mensagens não lidas
-        status, messages = mail.search(None, "UNSEEN")
+        # Busca mensagens não lidas
+        if "gmail.com" in config.EMAIL_IMAP_SERVER.lower():
+            # Busca avançada do Gmail para filtrar diretamente no servidor pelas palavras-chave no assunto
+            query = 'is:unread (subject:"negociação" OR subject:"negociacao" OR subject:"cobrança" OR subject:"cobranca" OR subject:"inaptos")'
+            print(f"[Email Monitor] Buscando no Gmail com query: {query}")
+            status, messages = mail.search(None, 'X-GM-RAW', query)
+        else:
+            status, messages = mail.search(None, "UNSEEN")
+            
         if status != "OK" or not messages[0]:
-            print("[Email Monitor] Nenhuma nova mensagem não lida encontrada.")
+            print("[Email Monitor] Nenhuma nova mensagem relevante não lida encontrada.")
             mail.close()
             mail.logout()
             return emails_encontrados
@@ -116,10 +123,14 @@ def buscar_novos_emails():
         # Pega a lista completa de IDs (ordem crescente: mais antigos primeiro)
         todas_mensagens = messages[0].split()
         
-        # Para evitar lentidão com os 53 mil e-mails não lidos,
-        # filtramos para ler apenas as 50 mensagens não lidas mais recentes (fim da lista)
-        msg_ids = todas_mensagens[-50:]
-        print(f"[Email Monitor] Analisando as {len(msg_ids)} mensagens não lidas mais recentes (de {len(todas_mensagens)} no total)...")
+        # Como o filtro de assunto já foi feito no servidor para Gmail,
+        # podemos analisar todas as mensagens encontradas (ou limitar a 50 se for fallback)
+        if "gmail.com" in config.EMAIL_IMAP_SERVER.lower():
+            msg_ids = todas_mensagens
+        else:
+            msg_ids = todas_mensagens[-50:]
+            
+        print(f"[Email Monitor] Analisando {len(msg_ids)} mensagens não lidas relevantes...")
         
         for num in msg_ids:
             # Obtém a mensagem inteira

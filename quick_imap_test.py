@@ -18,12 +18,14 @@ def testar():
         print("[OK] Login efetuado com sucesso!")
         
         mail.select("inbox")
-        status, messages = mail.search(None, "UNSEEN")
+        query = 'is:unread (subject:negociacao OR subject:cobranca OR subject:inaptos)'
+        print(f"Buscando com query: {query}")
+        status, messages = mail.search(None, "X-GM-RAW", f'"{query}"')
         if status == "OK" and messages[0]:
             num_msgs = len(messages[0].split())
-            print(f"[OK] Conexao IMAP operacional! Encontradas {num_msgs} mensagens nao lidas na Inbox.")
+            print(f"[OK] Conexao IMAP operacional! Encontradas {num_msgs} mensagens nao lidas relevantes na Inbox.")
         else:
-            print("[OK] Conexao IMAP operacional! Nenhuma mensagem nao lida na Inbox.")
+            print("[OK] Conexao IMAP operacional! Nenhuma mensagem nao lida relevante na Inbox.")
             
         mail.close()
         mail.logout()

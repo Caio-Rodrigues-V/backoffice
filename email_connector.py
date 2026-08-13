@@ -107,10 +107,10 @@ def buscar_novos_emails():
         
         # Busca mensagens não lidas
         if "gmail.com" in config.EMAIL_IMAP_SERVER.lower():
-            # Busca avançada do Gmail para filtrar diretamente no servidor pelas palavras-chave no assunto
-            query = 'is:unread (subject:"negociação" OR subject:"negociacao" OR subject:"cobrança" OR subject:"cobranca" OR subject:"inaptos")'
+            # Busca avançada do Gmail para filtrar diretamente no servidor pelas palavras-chave no assunto (ASCII-safe e sem acentos)
+            query = 'is:unread (subject:negociacao OR subject:cobranca OR subject:inaptos)'
             print(f"[Email Monitor] Buscando no Gmail com query: {query}")
-            status, messages = mail.search(None, 'X-GM-RAW', query)
+            status, messages = mail.search(None, 'X-GM-RAW', f'"{query}"')
         else:
             status, messages = mail.search(None, "UNSEEN")
             

@@ -8,12 +8,38 @@ def inicializar_sistema():
     db_manager.init_db()
     print("[Orquestrador] Sistema inicializado e banco de dados verificado.")
 
+def reprocessar_alunos_com_erro():
+    """
+    Busca alunos que ficaram com status de 'erro' ou 'pendente' no banco local e tenta reenviar para o CRM.
+    """
+    print("[Orquestrador] Verificando se ha alunos que falharam anteriormente para reprocessar...")
+    conn = db_manager.get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT id, nome, ra_cpf, telefone FROM alunos_negociacao WHERE status_whatsapp IN ('erro', 'pendente')"
+    )
+    alunos_falhos = cursor.fetchall()
+    conn.close()
+    
+    if alunos_falhos:
+        print(f"[Orquestrador] Re-processando {len(alunos_falhos)} alunos que falharam anteriormente...")
+        for aluno_id, nome, ra_cpf, telefone in alunos_falhos:
+            whatsapp_connector.disparar_mensagem_inicial(
+                aluno_id=aluno_id,
+                nome=nome,
+                ra_cpf=ra_cpf,
+                telefone=telefone
+            )
+
 def executar_ciclo_leitura():
     """
     Varre a caixa de e-mails, filtra, cadastra no banco,
     envia resposta de recebimento e inicia disparos de WhatsApp.
     """
     print("\n--- INICIANDO CICLO DE LEITURA DE NOVOS EMAILS ---")
+    
+    # 0. Reprocessa alunos com falhas anteriores
+    reprocessar_alunos_com_erro()
     
     # 1. Busca novos e-mails na pasta de entrada
     novos_emails = email_connector.buscar_novos_emails()

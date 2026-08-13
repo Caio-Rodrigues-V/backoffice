@@ -75,6 +75,30 @@ def executar_ciclo_leitura():
             os.remove(email["arquivo_origem"])
             print(f"[Orquestrador] E-mail origem {os.path.basename(email['arquivo_origem'])} processado e arquivado.")
 
+def sincronizar_status_crm():
+    """
+    Busca alunos que estão com status_whatsapp = 'contatando' no SQLite local,
+    consulta o status deles no CRM (Supabase) e atualiza o SQLite local.
+    """
+    import crm_connector
+    print("[Orquestrador] Sincronizando status dos atendimentos ativos com o CRM...")
+    
+    conn = db_manager.get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, telefone FROM alunos_negociacao WHERE status_whatsapp = 'contatando'")
+    alunos = cursor.fetchall()
+    conn.close()
+    
+    if not alunos:
+        print("[Orquestrador] Nenhum atendimento ativo em andamento para atualizar.")
+        return
+        
+    for aluno_id, telefone in alunos:
+        novo_status = crm_connector.verificar_status_aluno_no_crm(telefone)
+        if novo_status != "contatando":
+            db_manager.atualizar_status_aluno(aluno_id, novo_status)
+            print(f"[Orquestrador] Aluno ID {aluno_id} atualizado para status '{novo_status}' no banco local.")
+
 def executar_ciclo_retorno():
     """
     Verifica se há lotes onde todos os alunos já concluíram o atendimento no WhatsApp
@@ -82,7 +106,10 @@ def executar_ciclo_retorno():
     """
     print("\n--- INICIANDO CICLO DE MONITORAMENTO DE RETORNOS ---")
     
-    # 1. Verifica quais lotes já terminaram e precisam de e-mail de retorno
+    # 1. Sincroniza os status ativos com o CRM
+    sincronizar_status_crm()
+    
+    # 2. Verifica quais lotes já terminaram e precisam de e-mail de retorno
     lotes_concluidos = db_manager.obter_lotes_pendentes_retorno()
     
     if not lotes_concluidos:

@@ -4,54 +4,36 @@ from datetime import datetime
 import db_manager
 import config
 from config import WHATSAPP_SIMULADO_DIR
+import crm_connector
 
 def disparar_mensagem_inicial(aluno_id, nome, ra_cpf, telefone):
     """
-    Envia (transfere) os dados do aluno para o robô da GoGenier iniciar a abordagem.
-    Pode rodar em modo real (HTTP POST) ou em modo simulado.
+    Envia (transfere) os dados do aluno para o CRM iniciar a abordagem.
     """
     try:
-        # Prepara a carga de dados (payload) esperada pelo robô da GoGenier
-        payload = {
-            "aluno_id": aluno_id,
-            "nome": nome,
-            "ra_cpf": ra_cpf,
-            "telefone": telefone,
-            "origem": "Grupo DDM Backoffice"
-        }
+        # Prepara a mensagem inicial
+        mensagem = config.CRM_MENSAGEM_INICIAL.format(nome=nome)
         
-        # --- INTEGRAÇÃO REAL COM GOGENIER ---
-        if not config.SIMULAR_GOGENIER:
-            url = config.GOGENIER_WEBHOOK_URL
-            headers = {
-                "Content-Type": "application/json"
-            }
-            # Adiciona token de autenticação se estiver configurado
-            if config.GOGENIER_API_KEY:
-                headers["Authorization"] = f"Bearer {config.GOGENIER_API_KEY}"
-                
-            print(f"[GoGenier Ponte] Enviando dados do aluno {nome} para {url}...")
-            response = requests.post(url, json=payload, headers=headers, timeout=10)
-            response.raise_for_status()
-            print(f"[GoGenier Ponte] Aluno {nome} enviado com sucesso para a GoGenier.")
-            
+        print(f"[CRM Ponte] Integrando e iniciando abordagem para o aluno {nome} no CRM...")
+        sucesso = crm_connector.processar_aluno_no_crm(
+            nome=nome,
+            telefone=telefone,
+            ra_cpf=ra_cpf,
+            valor=0.0,  # Valor default (pode ser ajustado se extraído futuramente)
+            mensagem_inicial=mensagem
+        )
+        
+        if sucesso:
+            db_manager.atualizar_status_aluno(aluno_id, "contatando")
+            print(f"[CRM Ponte] Aluno {nome} enviado e abordagem iniciada com sucesso.")
+            return True
         else:
-            # --- COMPORTAMENTO SIMULADO (LOCAL) ---
-            log_file = os.path.join(WHATSAPP_SIMULADO_DIR, f"aluno_{aluno_id}_whats.log")
-            now = datetime.now().isoformat()
+            db_manager.atualizar_status_aluno(aluno_id, "erro")
+            print(f"[CRM Ponte] Falha no fluxo do CRM para o aluno {nome}.")
+            return False
             
-            with open(log_file, "a", encoding="utf-8") as f:
-                f.write(f"--- ENVIADO PARA GOGENIER EM {now} ---\n")
-                f.write(f"Payload: {payload}\n")
-                f.write("-----------------------------------------\n\n")
-                
-            print(f"[GoGenier Simulado] Aluno {nome} (ID: {aluno_id}) enviado para fila simulada.")
-        
-        # Atualiza o status do aluno no banco de dados para 'contatando' (indicando que foi enviado para a GoGenier)
-        db_manager.atualizar_status_aluno(aluno_id, "contatando")
-        return True
     except Exception as e:
-        print(f"[Erro GoGenier Ponte] Falha ao enviar dados do aluno {nome}: {e}")
+        print(f"[Erro CRM Ponte] Falha ao enviar dados do aluno {nome} para o CRM: {e}")
         db_manager.atualizar_status_aluno(aluno_id, "erro")
         return False
 

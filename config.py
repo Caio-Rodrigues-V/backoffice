@@ -45,6 +45,7 @@ DB_NAME = os.path.join(os.path.dirname(__file__), "backoffice_agent.db")
 
 # Integração com GoGenier (Robô de Abordagem)
 SIMULAR_GOGENIER = True  # Mude para False para enviar requisições HTTP reais para a GoGenier
+SIMULAR_WHATSAPP = os.getenv("SIMULAR_WHATSAPP", "True").lower() in ("true", "1", "yes")
 GOGENIER_WEBHOOK_URL = os.getenv("GOGENIER_WEBHOOK_URL", "http://localhost:5000/webhook/gogenier_mock")
 GOGENIER_API_KEY = os.getenv("GOGENIER_API_KEY", "")
 
@@ -57,3 +58,14 @@ WHATSAPP_SIMULADO_DIR = os.path.join(SIMULACAO_DIR, "whatsapp_logs")
 # Garantindo que os diretórios existam
 for diretorio in [EMAILS_ENTRADA_DIR, EMAILS_SAIDA_DIR, WHATSAPP_SIMULADO_DIR]:
     os.makedirs(diretorio, exist_ok=True)
+
+# Configurações de Integração com o CRM
+CRM_SUPABASE_URL = os.getenv("CRM_SUPABASE_URL", "")
+CRM_SUPABASE_KEY = os.getenv("CRM_SUPABASE_KEY", "")
+CRM_ADMIN_USER_ID = os.getenv("CRM_ADMIN_USER_ID", "")
+CRM_PIPELINE_ID = os.getenv("CRM_PIPELINE_ID", "")
+CRM_STAGE_ID = os.getenv("CRM_STAGE_ID", "")
+CRM_MENSAGEM_INICIAL = os.getenv(
+    "CRM_MENSAGEM_INICIAL",
+    "Olá, {nome}! Somos da equipe de negociação do Grupo DDM. Identificamos uma pendência e gostaríamos de lhe ajudar a regularizar. Podemos conversar?"
+)

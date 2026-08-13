@@ -91,7 +91,8 @@ def criar_ou_obter_conversa(supabase: Client, user_id: str, account_id: str, con
 
 def criar_negocio_no_funil(supabase: Client, user_id: str, account_id: str, contact_id: str, conversation_id: str, nome_aluno: str, valor: float, ra_cpf: str):
     """
-    Cria um card de negócio (Deal) no Funil de Vendas do CRM.
+    Cria ou atualiza um card de negócio (Deal) no Funil de Vendas do CRM.
+    Evita duplicados gerados pela trigger de auto-criação do Supabase.
     """
     deal_data = {
         "user_id": user_id,
@@ -105,8 +106,24 @@ def criar_negocio_no_funil(supabase: Client, user_id: str, account_id: str, cont
         "notes": f"Aluno cadastrado via Backoffice (Leitor de E-mails)\nRA/CPF: {ra_cpf}",
         "status": "open"
     }
-    supabase.table("deals").insert(deal_data).execute()
-    print(f"[CRM Connector] Card de negócio criado para {nome_aluno} no valor de R$ {valor}")
+    
+    try:
+        # Verifica se o Supabase já auto-criou um deal aberto para este contato
+        res = supabase.table("deals").select("id").eq("contact_id", contact_id).eq("status", "open").execute()
+        if res.data:
+            deal_id = res.data[0]["id"]
+            supabase.table("deals").update(deal_data).eq("id", deal_id).execute()
+            print(f"[CRM Connector] Card de negócio existente ID {deal_id} atualizado para '{nome_aluno}' no valor de R$ {valor}")
+        else:
+            supabase.table("deals").insert(deal_data).execute()
+            print(f"[CRM Connector] Card de negócio criado para '{nome_aluno}' no valor de R$ {valor}")
+    except Exception as e:
+        print(f"[CRM Connector] Erro ao criar/atualizar card de negócio: {e}")
+        # Tenta inserção direta caso a busca falhe
+        try:
+            supabase.table("deals").insert(deal_data).execute()
+        except Exception:
+            pass
 
 def enviar_mensagem_whatsapp(supabase: Client, user_id: str, account_id: str, conversation_id: str, telefone: str, mensagem: str) -> bool:
     """

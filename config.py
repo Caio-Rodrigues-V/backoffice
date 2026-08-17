@@ -23,6 +23,14 @@ EMAIL_PASS = os.getenv("EMAIL_PASS", "").replace(" ", "").strip("'\"")
 EMAIL_IMAP_SERVER = os.getenv("EMAIL_IMAP_SERVER", "imap.gmail.com")
 EMAIL_SMTP_SERVER = os.getenv("EMAIL_SMTP_SERVER", "smtp.gmail.com")
 
+# Credenciais específicas de leitura (IMAP) com fallback
+EMAIL_IMAP_USER = os.getenv("EMAIL_IMAP_USER", EMAIL_USER)
+EMAIL_IMAP_PASS = os.getenv("EMAIL_IMAP_PASS", EMAIL_PASS).replace(" ", "").strip("'\"")
+
+# Credenciais específicas de envio (SMTP) com fallback
+EMAIL_SMTP_USER = os.getenv("EMAIL_SMTP_USER", EMAIL_USER)
+EMAIL_SMTP_PASS = os.getenv("EMAIL_SMTP_PASS", EMAIL_PASS).replace(" ", "").strip("'\"")
+
 # Configurações de Filtros
 # Adicionado 'gmail.com' para permitir que você faça testes usando sua própria conta
 DOMINIOS_AUTORIZADOS = [

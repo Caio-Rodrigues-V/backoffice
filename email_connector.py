@@ -95,14 +95,14 @@ def buscar_novos_emails():
     """
     emails_encontrados = []
     
-    if not config.EMAIL_USER or not config.EMAIL_PASS:
-        print("[Email Monitor] Erro: EMAIL_USER ou EMAIL_PASS não configurados no arquivo .env!")
+    if not config.EMAIL_IMAP_USER or not config.EMAIL_IMAP_PASS:
+        print("[Email Monitor] Erro: EMAIL_IMAP_USER ou EMAIL_IMAP_PASS não configurados no arquivo .env!")
         return emails_encontrados
 
     try:
         print(f"[Email Monitor] Conectando ao servidor IMAP: {config.EMAIL_IMAP_SERVER}...")
         mail = imaplib.IMAP4_SSL(config.EMAIL_IMAP_SERVER, 993)
-        mail.login(config.EMAIL_USER, config.EMAIL_PASS)
+        mail.login(config.EMAIL_IMAP_USER, config.EMAIL_IMAP_PASS)
         mail.select("inbox")
         
         # Busca todas as mensagens não lidas
@@ -216,13 +216,13 @@ def enviar_resposta_recebimento(lote_id, destinatario, assunto_original, alunos_
     """
     Envia o e-mail de resposta inicial (Confirmação de recebimento) respondendo na mesma conversa (Thread).
     """
-    if not config.EMAIL_USER or not config.EMAIL_PASS:
-        print("[Email Resposta] Erro: EMAIL_USER ou EMAIL_PASS não configurados no arquivo .env!")
+    if not config.EMAIL_SMTP_USER or not config.EMAIL_SMTP_PASS:
+        print("[Email Resposta] Erro: EMAIL_SMTP_USER ou EMAIL_SMTP_PASS não configurados no arquivo .env!")
         return
 
     try:
         msg = MIMEMultipart()
-        msg["From"] = config.EMAIL_USER
+        msg["From"] = config.EMAIL_SMTP_USER
         msg["To"] = destinatario
         msg["Subject"] = f"Re: {assunto_original}"
         
@@ -246,8 +246,8 @@ def enviar_resposta_recebimento(lote_id, destinatario, assunto_original, alunos_
         
         # Conecta no SMTP
         server = conectar_smtp()
-        server.login(config.EMAIL_USER, config.EMAIL_PASS)
-        server.sendmail(config.EMAIL_USER, [destinatario], msg.as_string())
+        server.login(config.EMAIL_SMTP_USER, config.EMAIL_SMTP_PASS)
+        server.sendmail(config.EMAIL_SMTP_USER, [destinatario], msg.as_string())
         server.quit()
         
         print(f"[Email Resposta] E-mail de confirmação enviado com sucesso para {destinatario} (Lote: {lote_id})")
@@ -259,13 +259,13 @@ def enviar_resposta_resultado_final(lote_id, destinatario, assunto_original, rel
     """
     Envia o e-mail final com o relatório de quem formalizou e quem não formalizou (Threaded).
     """
-    if not config.EMAIL_USER or not config.EMAIL_PASS:
-        print("[Email Resposta Final] Erro: EMAIL_USER ou EMAIL_PASS não configurados no arquivo .env!")
+    if not config.EMAIL_SMTP_USER or not config.EMAIL_SMTP_PASS:
+        print("[Email Resposta Final] Erro: EMAIL_SMTP_USER ou EMAIL_SMTP_PASS não configurados no arquivo .env!")
         return
 
     try:
         msg = MIMEMultipart()
-        msg["From"] = config.EMAIL_USER
+        msg["From"] = config.EMAIL_SMTP_USER
         msg["To"] = destinatario
         msg["Subject"] = f"Re: {assunto_original} - RETORNO FINAL"
         
@@ -307,8 +307,8 @@ def enviar_resposta_resultado_final(lote_id, destinatario, assunto_original, rel
         
         # Conecta no SMTP
         server = conectar_smtp()
-        server.login(config.EMAIL_USER, config.EMAIL_PASS)
-        server.sendmail(config.EMAIL_USER, [destinatario], msg.as_string())
+        server.login(config.EMAIL_SMTP_USER, config.EMAIL_SMTP_PASS)
+        server.sendmail(config.EMAIL_SMTP_USER, [destinatario], msg.as_string())
         server.quit()
         
         print(f"[Email Resposta Final] E-mail de relatório final enviado para {destinatario} (Lote: {lote_id})")

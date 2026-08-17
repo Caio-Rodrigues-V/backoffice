@@ -46,6 +46,17 @@ def init_db():
     conn.commit()
     conn.close()
 
+def lote_existe(message_id):
+    """Verifica se já existe um lote cadastrado com o message_id fornecido."""
+    if not message_id:
+        return False
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM lotes_email WHERE message_id = ?", (message_id,))
+    existe = cursor.fetchone() is not None
+    conn.close()
+    return existe
+
 def criar_lote(sender, subject, message_id=None):
     """Cria um novo registro de lote e retorna o ID gerado."""
     conn = get_connection()

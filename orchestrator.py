@@ -45,6 +45,13 @@ def executar_ciclo_leitura():
     novos_emails = email_connector.buscar_novos_emails()
     
     for email in novos_emails:
+        message_id = email.get("id")
+        
+        # Evita re-processar o mesmo e-mail caso ele seja marcado como não lido manualmente
+        if message_id and db_manager.lote_existe(message_id):
+            print(f"[Orquestrador] E-mail com Message-ID '{message_id}' já foi processado anteriormente. Ignorando...")
+            continue
+            
         alunos = email["alunos"]
         
         if not alunos:
@@ -54,7 +61,7 @@ def executar_ciclo_leitura():
             continue
             
         # 2. Cria o lote de controle no banco de dados
-        lote_id = db_manager.criar_lote(email["sender"], email["subject"], email.get("id"))
+        lote_id = db_manager.criar_lote(email["sender"], email["subject"], message_id)
         print(f"[Orquestrador] Criado Lote ID {lote_id} para o e-mail '{email['subject']}'")
         
         # 3. Cadastra os alunos vinculados a esse lote

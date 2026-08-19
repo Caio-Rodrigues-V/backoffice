@@ -1,5 +1,6 @@
 import os
 import time
+import random
 import db_manager
 import email_connector
 import whatsapp_connector
@@ -26,8 +27,9 @@ def reprocessar_alunos_com_erro():
         print(f"[Orquestrador] Re-processando {len(alunos_falhos)} alunos que falharam anteriormente...")
         for i, (aluno_id, nome, ra_cpf, telefone) in enumerate(alunos_falhos):
             if i > 0:
-                print("[Orquestrador] Aguardando 15 segundos antes de reprocessar o proximo aluno...")
-                time.sleep(15)
+                delay = random.randint(10, 30)
+                print(f"[Orquestrador] Aguardando {delay} segundos antes de reprocessar o proximo aluno...")
+                time.sleep(delay)
             whatsapp_connector.disparar_mensagem_inicial(
                 aluno_id=aluno_id,
                 nome=nome,
@@ -101,8 +103,9 @@ def executar_ciclo_leitura():
         # 6. Dispara a mensagem inicial de WhatsApp para cada um
         for i, (aluno_id, nome, ra_cpf, telefone) in enumerate(alunos_cadastrados):
             if i > 0:
-                print("[Orquestrador] Aguardando 15 segundos antes de enviar para o proximo aluno...")
-                time.sleep(15)
+                delay = random.randint(10, 30)
+                print(f"[Orquestrador] Aguardando {delay} segundos antes de enviar para o proximo aluno...")
+                time.sleep(delay)
             whatsapp_connector.disparar_mensagem_inicial(
                 aluno_id=aluno_id,
                 nome=nome,

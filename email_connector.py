@@ -116,8 +116,8 @@ def buscar_novos_emails():
         # Pega a lista completa de IDs (ordem crescente: mais antigos primeiro)
         todas_mensagens = messages[0].split()
         
-        # Filtramos para ler apenas os cabeçalhos das 50 mensagens não lidas mais recentes (fim da lista)
-        msg_ids = todas_mensagens[-50:]
+        # Filtramos para ler apenas os cabeçalhos das 10 mensagens não lidas mais recentes (fim da lista)
+        msg_ids = todas_mensagens[-10:]
         print(f"[Email Monitor] Analisando cabeçalhos das {len(msg_ids)} mensagens não lidas mais recentes...")
         
         for num in msg_ids:

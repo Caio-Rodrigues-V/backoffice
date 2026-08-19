@@ -61,10 +61,19 @@ def criar_ou_obter_contato(supabase: Client, user_id: str, account_id: str, nome
         "name": nome,
         "company": "Grupo DDM Backoffice"
     }
-    insert_res = supabase.table("contacts").insert(contato_data).execute()
-    if insert_res.data:
-        print(f"[CRM Connector] Novo contato criado: {nome} ({telefone_limpo})")
-        return insert_res.data[0]["id"]
+    try:
+        insert_res = supabase.table("contacts").insert(contato_data).execute()
+        if insert_res.data:
+            print(f"[CRM Connector] Novo contato criado: {nome} ({telefone_limpo})")
+            return insert_res.data[0]["id"]
+    except Exception as e:
+        err_msg = str(e)
+        if "23505" in err_msg or "duplicate key" in err_msg:
+            print(f"[CRM Connector] Contato {nome} ({telefone_limpo}) já existe (concorrência). Recuperando ID...")
+            res_retry = supabase.table("contacts").select("id").eq("phone_normalized", telefone_limpo).eq("account_id", account_id).execute()
+            if res_retry.data:
+                return res_retry.data[0]["id"]
+        raise e
         
     raise ValueError("Falha ao criar contato no Supabase.")
 
